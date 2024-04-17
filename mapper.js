@@ -100,7 +100,7 @@ function map(centroids, input_file, num_reducers, key) {
 }
 
 function yourServiceImplementation(call, callback) {
-  console.log("Received gRPC request:", call.request);
+  // console.log("Received gRPC request:", call.request);
   const { filePath, centroids, numReducer, key } = call.request;
   const centroidCoordinates = centroids.map((centroid) => [
     centroid.x,

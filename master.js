@@ -78,8 +78,13 @@ async function setMappersClientInfo(m) {
   });
 }
 
-async function sendDataToMappers(mappersClientInfo, r) {
-  let mapperResponses = {};
+async function sendDataToMappers(mappersClientInfo, r, filePaths, inter = 0) {
+  // let mapperResponses = {};
+  let mapperResponses = Object.keys(mappersClientInfo).reduce((obj, key) => {
+    obj[key] = false;
+    return obj;
+    ("");
+  }, {});
   await Promise.all(
     Object.entries(mappersClientInfo).map(([port, conn], i) => {
       return new Promise((resolve, reject) => {
@@ -94,26 +99,69 @@ async function sendDataToMappers(mappersClientInfo, r) {
           };
           cent.push(c);
         });
-        const request = {
-          filePath: `Data/Input_Chunks/chunk${i + 1}.txt`,
-          centroids: cent,
-          numReducer: r,
-          key:i
-        };
-        conn.MasterMapper(request, (error, response) => {
-          if (error) {
+        if (filePaths[i]) {
+          const request = {
+            filePath: filePaths[i],
+            centroids: cent,
+            numReducer: r,
+            key: i + 1
+          };
+          try {
+            conn.MasterMapper(request, (error, response) => {
+              if (error) {
+                console.error(`Error mapping data to mapper:`, error);
+                mapperResponses[port] = response.status;
+                reject(error);
+              } else {
+                console.log(`Response from mapper:`, response.status);
+                mapperResponses[port] = response.status;
+                resolve();
+              }
+            });
+          } catch (error) {
             console.error(`Error sending data to mapper:`, error);
+            mapperResponses[port] = response.status;
             reject(error);
-          } else {
-            console.log(`Response from mapper:`, response.status);
-            mapperResponses[port] = response;
-            resolve();
           }
-        });
+        } else {
+          resolve();
+        }
       });
     })
   );
-  return mapperResponses;
+
+  const filteredMappersClientInfo = Object.entries(mapperResponses)
+    .filter(([key, value]) => value === "true")
+    .reduce((obj, [key]) => {
+      if (mappersClientInfo.hasOwnProperty(key)) {
+        obj[key] = mappersClientInfo[key];
+      }
+      return obj;
+    }, {});
+
+  const tempLength = Object.keys(mapperResponses).length;
+
+  let filteredFilePaths = Object.keys(mapperResponses)
+    .map((key, index) => {
+      if (mapperResponses[key] === "false") return filePaths[index];
+    })
+    .filter((item) => item);
+
+  filteredFilePaths = filteredFilePaths.concat(filePaths.slice(tempLength));
+
+  if (
+    filteredFilePaths?.length &&
+    Object.keys(filteredMappersClientInfo)?.length &&
+    inter < 4
+  ) {
+    return await sendDataToMappers(
+      filteredMappersClientInfo,
+      r,
+      filteredFilePaths,
+      inter++
+    );
+  }
+  return filteredFilePaths;
 }
 
 function promptUser() {
@@ -129,10 +177,21 @@ function promptUser() {
           runReducer(r);
           centroids = getRandomCentroids("Data/Input/points.txt", k);
           split_input("Data/Input/points.txt", m);
+          let filePaths = [];
+          for (let a = 0; a < m; a++) {
+            filePaths.push(`Data/Input_Chunks/chunk${a + 1}.txt`);
+          }
           (async () => {
             const mappersClientInfo = await setMappersClientInfo(m);
             setTimeout(async () => {
-              await sendDataToMappers(mappersClientInfo, r);
+              const result = await sendDataToMappers(
+                mappersClientInfo,
+                r,
+                filePaths
+              );
+              console.log("result");
+
+              console.log(result);
             }, [2000]);
           })();
         });
