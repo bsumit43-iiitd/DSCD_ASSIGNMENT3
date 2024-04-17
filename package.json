@@ -1,0 +1,26 @@
+{
+  "name": "assignment2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "generate-proto-types": "grpc_tools_node_protoc --js_out=import_style=commonjs,binary:. --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_tools_node_protoc_plugin` raft/*.proto",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bsumit43-iiitd/DSCD_ASSIGNMENT2.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bsumit43-iiitd/DSCD_ASSIGNMENT2/issues"
+  },
+  "homepage": "https://github.com/bsumit43-iiitd/DSCD_ASSIGNMENT2#readme",
+  "dependencies": {
+    "@grpc/grpc-js": "1.10.2",
+    "i": "^0.3.7",
+    "uuid": "^9.0.1"
+  }
+}

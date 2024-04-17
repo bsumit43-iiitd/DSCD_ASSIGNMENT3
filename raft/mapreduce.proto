@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+// Define Raft service
+service MapReduceService {
+  rpc MasterMapper(MasterMapperRequest) returns (MasterMapperResponse);
+    
+}
+
+
+message MasterMapperRequest {
+  int32 key = 1;
+  string filePath = 2;
+  repeated Centroid centroids = 3;
+  int32 numReducer = 4;
+}
+
+message Centroid {
+  double x = 1;
+  double y = 2;
+}
+
+message MasterMapperResponse {
+  string status = 1;
+}
+
+
