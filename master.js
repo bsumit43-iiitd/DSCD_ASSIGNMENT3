@@ -7,7 +7,7 @@ const readline = require("readline");
 const PROTO_PATH = path.resolve(__dirname, "raft/mapreduce.proto");
 const packageDefinition = protoLoader.loadSync(PROTO_PATH);
 const grpcObj = grpc.loadPackageDefinition(packageDefinition);
-
+const { logToFile, CreateDumpFile } = require("./ReadDump.js");
 const { runMapper } = require("./mapper.js");
 const { runReducer } = require("./reducer.js");
 
@@ -24,6 +24,10 @@ const rl = readline.createInterface({
 let mappersClientInfo = {};
 let reducerClientInfo = {};
 let centroids = [];
+
+CreateDumpFile().then((res) => {
+  //console.log("Dump file is created");
+});
 
 function getRandomCentroids(inputFilePath, num_centroids) {
   const data = fs.readFileSync(inputFilePath, "utf8").split("\n");
@@ -101,6 +105,9 @@ async function sendDataToMappers(mappersClientInfo, r, filePaths, inter = 0) {
   }, {});
   await Promise.all(
     Object.entries(mappersClientInfo).map(([port, conn], i) => {
+      logToFile("info",
+             `Requesting Mapper ${port}`,
+             "dump.txt");
       return new Promise((resolve, reject) => {
         cent = [];
         centroids?.map((centroid) => {
@@ -125,10 +132,16 @@ async function sendDataToMappers(mappersClientInfo, r, filePaths, inter = 0) {
               if (error) {
                 console.error(`Error mapping data to mapper:`, error);
                 mapperResponses[port] = response.status;
+                logToFile("info",
+                "Mapper Status: FAILURE",
+                "dump.txt");
                 reject(error);
               } else {
                 console.log(`Response from mapper:`, response.status);
                 mapperResponses[port] = response.status;
+                logToFile("info",
+                "Mapper Status: SUCCESS",
+                "dump.txt");
                 resolve();
               }
             });
@@ -189,10 +202,16 @@ function invokeReducer(conn, m, i, port, reducerResponses, centroids) {
         if (error) {
           console.error(`Error mapping data to reducer:`, error);
           reducerResponses[port] = response.status;
+          logToFile("info",
+             "Reducer Status: FAILURE",
+             "dump.txt");
           reject(error);
         } else {
           console.log(`Response from reducer:`, response.status);
           reducerResponses[port] = response.status;
+          logToFile("info",
+             "Reducer Status: SUCCESS",
+             "dump.txt");
           resolve(response?.centroids);
         }
       });
@@ -241,6 +260,9 @@ async function sendRequestToReducers(reducerClientInfo, r, m, inter = 0) {
   let allCentroids = []; // Array to accumulate all centroids
   await Promise.all(
     Object.entries(reducerClientInfo).map(([port, conn], i) => {
+      logToFile("info",
+             `Requesting Reducer ${port}`,
+             "dump.txt");
       return invokeReducer(conn, m, i, port, reducerResponses)
         .then((centroids) => {
           if (centroids) {
@@ -269,7 +291,6 @@ function sendDataAndReceiveNewCentroids(m, r, filePaths) {
               console.log(
                 "Mapper is down. Not able to map all the data points/chunks"
               );
-              reject("Mapper is down");
             } else {
               const reducerClientInfo = await setReducerClientInfo(r);
               setTimeout(async () => {
@@ -303,6 +324,13 @@ async function runIterations(n, m, r, filePaths) {
   let newCentroids = [];
   for (let i = 0; i < n; i++) {
     try {
+      logToFile("info",
+        `Iteration Number: ${i}`,
+        "dump.txt");
+
+      logToFile("info",
+        `Centroid: ${centroids}`,
+        "dump.txt");
       newCentroids = await sendDataAndReceiveNewCentroids(m, r, filePaths);
 
       const centroidsFormatted = newCentroids.map(({ x, y }) => `${x},${y}`);
@@ -327,6 +355,9 @@ async function runIterations(n, m, r, filePaths) {
       break; // Break the loop on error
     }
   }
+  logToFile("info",
+        `Final Centroid: ${newCentroids}`,
+        "dump.txt");
   return newCentroids;
 }
 
