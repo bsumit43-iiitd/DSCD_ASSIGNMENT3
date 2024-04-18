@@ -3,7 +3,38 @@ syntax = "proto3";
 // Define Raft service
 service MapReduceService {
   rpc MasterMapper(MasterMapperRequest) returns (MasterMapperResponse);
-    
+  rpc InvokeReducer(InvokeReducerRequest) returns (InvokeReducerResponse);
+  rpc MapperReducer(MapperReducerRequest) returns (MapperReducerResponse);
+
+}
+
+message MapperReducerRequest {
+  int32 key = 1;
+  int32 mapperKey=2;
+  
+}
+message MapperReducerResponse {
+  int32 key = 1;
+  repeated PartitionData data = 2;
+  string status = 3;
+}
+
+message PartitionData{
+  int32 key = 1;
+  double x = 2;
+  double y = 3;
+
+}
+
+
+message InvokeReducerRequest {
+  int32 key = 1;
+  int32 numMapper = 2;
+}
+message InvokeReducerResponse {
+  string status = 1;
+  int32 key = 2;
+  repeated Centroid centroids = 3;
 }
 
 

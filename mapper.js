@@ -79,7 +79,7 @@ function map(centroids, input_file, num_reducers, key) {
       });
 
       // Introduce probabilistic failure
-      const probabilisticFlag = Math.random() < 0.5; // 50% probability of failure
+      const probabilisticFlag = Math.random() < 1; // 50% probability of failure
       // const probabilisticFlag = 1;
       if (probabilisticFlag) {
         console.log("Mapping successful.");
@@ -98,9 +98,39 @@ function map(centroids, input_file, num_reducers, key) {
     }
   });
 }
+function MapperReducer(call, callback) {
+  const { key, mapperKey } = call.request;
+  try {
+    const data = JSON.parse(
+      fs.readFileSync(
+        `Data/Mappers/M${mapperKey}/Partition_${key - 1}.txt`,
+        "utf8"
+      )
+    );
+
+    const partitionDataArray = data.map((item) => {
+      const [xStr, yStr] = item.value.split(",");
+      const x = parseFloat(xStr);
+      const y = parseFloat(yStr);
+      return {
+        key: item.key,
+        x: x,
+        y: y
+      };
+    });
+
+    callback(null, {
+      status: true,
+      data: partitionDataArray
+    });
+  } catch (err) {
+    callback(null, {
+      status: false
+    });
+  }
+}
 
 function yourServiceImplementation(call, callback) {
-  // console.log("Received gRPC request:", call.request);
   const { filePath, centroids, numReducer, key } = call.request;
   const centroidCoordinates = centroids.map((centroid) => [
     centroid.x,
@@ -111,7 +141,6 @@ function yourServiceImplementation(call, callback) {
       callback(null, {
         status: true
       });
-      console.log("Partition files:", partitionFiles);
     })
     .catch((error) => {
       callback(null, {
@@ -126,7 +155,8 @@ const runMapper = (numPorts) => {
     const port = `300${i + 1}`;
     const server = new grpc.Server();
     server.addService(grpcObj.MapReduceService.service, {
-      MasterMapper: yourServiceImplementation
+      MasterMapper: yourServiceImplementation,
+      MapperReducer: MapperReducer
     });
     server.bindAsync(
       `0.0.0.0:${port}`,
