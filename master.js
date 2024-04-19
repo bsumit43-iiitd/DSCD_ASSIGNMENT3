@@ -229,7 +229,7 @@ function centroidsConverged(oldCentroids, newCentroids, tolerance) {
 
   // Check if the lengths of old and new centroids arrays match
   if (oldCentroids.length !== newCentroids.length) {
-    console.log("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvLength Not Matched")
+    //console.log("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvLength Not Matched")
     return false;
   }
   oldCentroids.sort((a, b) => a.x - b.x);
@@ -350,11 +350,17 @@ async function runIterations(n, m, r, filePaths) {
         convertPointsToPointObjects(newCentroids),
         tolerance
       );
-      console.log("Concergence is ", converged)
+      console.log("Convergence is ", converged)
       console.log(`Iteration ${i + 1}: New centroids received.`);
       if (converged) break;
-      
-      centroids = newCentroids;
+      if (newCentroids.length == centroids.length) {
+        centroids = newCentroids;
+      } else if (newCentroids.length < centroids.length) {
+        centroids = [...newCentroids, centroids[centroids?.length - 1]];
+      } else {
+        centroids = newCentroids;
+      }
+     // centroids = newCentroids;
       // Check for convergence
     } catch (error) {
       console.error(`Iteration ${i + 1}: Error occurred:`, error);
