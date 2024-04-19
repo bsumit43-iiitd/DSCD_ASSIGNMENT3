@@ -224,10 +224,16 @@ function invokeReducer(conn, m, i, port, reducerResponses, centroids) {
 }
 
 function centroidsConverged(oldCentroids, newCentroids, tolerance) {
+  console.log(oldCentroids)
+  console.log(newCentroids)
+
   // Check if the lengths of old and new centroids arrays match
   if (oldCentroids.length !== newCentroids.length) {
+    console.log("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvLength Not Matched")
     return false;
   }
+  oldCentroids.sort((a, b) => a.x - b.x);
+  newCentroids.sort((a, b) => a.x - b.x);
 
   // Iterate over each centroid
   for (let i = 0; i < oldCentroids.length; i++) {
@@ -305,13 +311,13 @@ function sendDataAndReceiveNewCentroids(m, r, filePaths) {
                   console.error("Error sending request to reducers:", error);
                   reject(error);
                 }
-              }, 2000);
+              }, 1000);
             }
           } catch (error) {
             console.error("Error sending data to mappers:", error);
             reject(error);
           }
-        }, 2000);
+        }, 1000);
       })
       .catch((error) => {
         console.error("Error setting mappers client info:", error);

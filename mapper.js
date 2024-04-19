@@ -44,13 +44,13 @@ function map(centroids, input_file, num_reducers, key) {
           centroids,
           point.split(",").map(Number)
         );
-        return { key: nearest_centroid.index, value: point };
+        return { key: nearest_centroid.index+1, value: point };
       });
 
       // Partition the mapped data
       const partitions = {};
       mapped_data.forEach((pair) => {
-        const reducer_index = pair.key % num_reducers;
+        const reducer_index = (pair.key % num_reducers)+1;
         if (!partitions[reducer_index]) {
           partitions[reducer_index] = [];
         }
@@ -103,7 +103,7 @@ function MapperReducer(call, callback) {
   try {
     const data = JSON.parse(
       fs.readFileSync(
-        `Data/Mappers/M${mapperKey}/Partition_${key - 1}.txt`,
+        `Data/Mappers/M${mapperKey}/Partition_${key}.txt`,
         "utf8"
       )
     );

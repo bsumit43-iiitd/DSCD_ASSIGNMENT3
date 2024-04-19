@@ -128,7 +128,7 @@ async function invokeReducer(call, callback) {
   setTimeout(async () => {
     const result = await requestDataToMappers(mappersClientInfo, key);
     callback(null, { status: true, centroids: Object.values(result) });
-  }, [2000]);
+  }, [1000]);
 }
 
 const runReducer = (numPorts) => {
